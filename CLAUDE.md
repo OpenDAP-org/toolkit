@@ -1,6 +1,6 @@
 # Toolkit
 
-Developer host tools (not shipped in DAP OS): build, flash, emulation, publish, templates.
+Developer host tools (not shipped in OpenDAP OS): build, flash, emulation, publish, templates.
 
 Part of [OpenDAP](https://github.com/opendap-project). This repository is open source.
 

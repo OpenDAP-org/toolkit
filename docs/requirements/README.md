@@ -4,7 +4,7 @@ Requirements for the developer toolkit.
 
 | ID | Requirement | Priority | Status |
 |---|---|---|---|
-| TK-001 | The toolkit runs on the developer host and is not shipped in DAP OS. | must | Confirmed |
+| TK-001 | The toolkit runs on the developer host and is not shipped in OpenDAP OS. | must | Confirmed |
 | TK-002 | The T1 shall have its own ADB-style command-line tool covering everything an advanced user may want to do with the device. | must | Confirmed |
 
 - ADB (Android Debug Bridge) is the reference for scope: shell, file transfer, installing and removing software, logs, port forwarding, screenshots and input, rebooting into recovery or flashing modes. The command set is not defined yet.
