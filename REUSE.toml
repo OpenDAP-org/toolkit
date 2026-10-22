@@ -13,12 +13,6 @@ SPDX-FileCopyrightText = "2026 The OpenDAP Project"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 [[annotations]]
-path = "templates/**"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 The OpenDAP Project"
-SPDX-License-Identifier = "MIT"
-
-[[annotations]]
 path = "docs/**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 The OpenDAP Project"

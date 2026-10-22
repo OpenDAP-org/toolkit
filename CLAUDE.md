@@ -1,6 +1,6 @@
-# Toolkit
+# Toolkit hooks
 
-Developer host tools (not shipped in OpenDAP OS): build, flash, emulation, publish, templates.
+Shared pre-commit hooks for every OpenDAP repository.
 
 Part of [OpenDAP](https://github.com/opendap-project). This repository is open source.
 
@@ -8,5 +8,6 @@ Part of [OpenDAP](https://github.com/opendap-project). This repository is open s
 
 - Write everything in English: code, docs, commit messages.
 - Record only information the maintainers confirmed. Do not infer specs, numbers or wording.
-- Project context is in `docs/`: requirements in `docs/requirements/`. Read them before changing anything; update them with the `/opendap:requirement` and `/opendap:adr` skills.
 - Licensing follows REUSE (`REUSE.toml`, `LICENSES/`). After adding files or folders, run the `/opendap:license-check` skill.
+- Every OpenDAP repository pins these hooks by tag. Changing a hook means a new tag and updating the pins; this repository runs its own hooks with `repo: local`.
+- The toolkit is one repository per tool domain under `public/toolkit/` (`cli`, `hooks`, `host`, `hardware`, `verify`).
