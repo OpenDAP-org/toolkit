@@ -89,6 +89,48 @@ class KicadDru(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("unbalanced", r.stderr)
 
+    def outside_file(self, name, text=""):
+        path = os.path.join(self.tmp, name)
+        with open(path, "w") as f:
+            f.write(text)
+        return path
+
+    def test_target_symlink_is_refused(self):
+        outside = self.outside_file("victim.txt", "keep me\n")
+        os.symlink(outside, self.path(TARGET))
+        for args in (("compose", MANIFEST), ("check", MANIFEST)):
+            r = self.run_tool(*args)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("symbolic link", r.stderr + r.stdout)
+            self.assertNotIn("keep me", r.stderr + r.stdout)
+        with open(outside) as f:
+            self.assertEqual(f.read(), "keep me\n")
+
+    def test_target_dir_outside_is_refused(self):
+        outdir = os.path.join(self.tmp, "elsewhere")
+        os.makedirs(outdir)
+        os.symlink(outdir, self.path("hardware/out"))
+        shutil.copy(self.path(MANIFEST), self.path("hardware/out/demo.dru.toml"))
+        r = self.run_tool("compose", "hardware/out/demo.dru.toml")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("outside the repository", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(outdir, "demo.kicad_dru")))
+
+    def test_source_symlink_outside_is_refused(self):
+        outside = self.outside_file("secret.kicad_dru", '(version 1)\n(rule "secret"\n\t(constraint clearance (min 1mm))\n)\n')
+        os.remove(self.path(PRODUCT))
+        os.symlink(outside, self.path(PRODUCT))
+        r = self.run_tool("compose", MANIFEST)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("resolves outside the repository", r.stderr)
+        self.assertFalse(os.path.exists(self.path(TARGET)))
+
+    def test_source_inside_via_symlink_is_allowed(self):
+        os.symlink("lib/opendap", self.path("hardware/fablink"))
+        with open(self.path(MANIFEST), "w") as f:
+            f.write('version = 1\nsources = ["hardware/fablink/design-rules/fab-demo/fab-demo.kicad_dru"]\n')
+        self.assertEqual(self.run_tool("compose", MANIFEST).returncode, 0)
+
     def test_usage_error(self):
         self.assertEqual(self.run_tool("frobnicate").returncode, 2)
 

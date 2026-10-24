@@ -176,11 +176,30 @@ def target_of(manifest):
     return manifest[: -len(MANIFEST_SUFFIX)] + ".kicad_dru"
 
 
+def inside(path, root):
+    """True when path, with every link resolved, is inside root (itself resolved)."""
+    real = os.path.realpath(path)
+    return os.path.commonpath([real, root]) == root
+
+
+def checked_target(manifest, root):
+    """The manifest's .kicad_dru, refused when it is a link or resolves outside the repository."""
+    if not inside(manifest, root):
+        raise DruError(f"{manifest}: the manifest resolves outside the repository")
+    target = target_of(manifest)
+    if os.path.islink(target):
+        raise DruError(f"{target}: the composed file is a symbolic link; refusing to read or write it")
+    if not inside(target, root):
+        raise DruError(f"{target}: the composed file resolves outside the repository")
+    return os.path.realpath(target)
+
+
 def compose(manifest):
-    """The composed .kicad_dru text for a manifest."""
-    root = repo_root(manifest)
+    """The composed .kicad_dru text for a manifest. Every path it reads or names for writing
+    resolves inside the repository (the kicad-lib submodule is inside it)."""
+    root = os.path.realpath(repo_root(manifest))
+    target = checked_target(manifest, root)
     sources = load_manifest(manifest)
-    target = os.path.realpath(target_of(manifest))
     rel_manifest = os.path.relpath(os.path.abspath(manifest), root)
     out = [
         "(version 1)\n",
@@ -196,6 +215,8 @@ def compose(manifest):
         path = os.path.join(root, src)
         if os.path.realpath(path) == target:
             raise DruError(f"{manifest}: the composed file {src} cannot be one of its own sources")
+        if os.path.lexists(path) and not inside(path, root):
+            raise DruError(f"{manifest}: source {src} resolves outside the repository")
         if not os.path.isfile(path):
             hint = " (is the kicad-lib submodule checked out? git submodule update --init)" if "/lib/" in src else ""
             raise DruError(f"{manifest}: source {src} not found{hint}")
@@ -243,7 +264,10 @@ def cmd_compose(args):
         if to_stdout:
             sys.stdout.write(text)
         else:
-            with open(target_of(m), "w", newline="\n") as f:
+            # compose() confined the target to the repository and refused a link; O_NOFOLLOW
+            # also refuses a link created since.
+            fd = os.open(target_of(m), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o644)
+            with os.fdopen(fd, "w", newline="\n") as f:
                 f.write(text)
             print(f"composed {target_of(m)}")
     return 0
@@ -267,7 +291,10 @@ def cmd_check(args):
             if not os.path.isfile(item["target"]):
                 item["status"] = "missing"
             else:
-                have = open(item["target"], encoding="utf-8", errors="replace", newline="").read()
+                # Reached only after compose() confined the target; O_NOFOLLOW refuses a late link.
+                fd = os.open(item["target"], os.O_RDONLY | os.O_NOFOLLOW)
+                with os.fdopen(fd, encoding="utf-8", errors="replace", newline="") as f:
+                    have = f.read()
                 item["status"] = "ok" if have == want else "stale"
                 if have != want:
                     item["diff"] = "".join(list(difflib.unified_diff(
