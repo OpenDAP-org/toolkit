@@ -26,3 +26,10 @@
   entry: hooks/no-stray-files.sh
   language: script
   files: \.(pdf|html?)$
+- id: kicad-dru-composed
+  name: KiCad rule files composed and up to date
+  description: Every <project>.kicad_dru that has a <project>.dru.toml manifest equals the composition of the sources it lists (fab rule set + product rules); fails on stale files and duplicate rule names.
+  entry: hooks/kicad-dru.py check
+  language: script
+  pass_filenames: false
+  always_run: true

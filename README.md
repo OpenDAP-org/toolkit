@@ -12,20 +12,37 @@ Part of the [OpenDAP](https://github.com/opendap-project) Developer Toolkit, whi
 | `kicad-drc` | DRC on changed KiCad boards |
 | `no-fab-outputs` | No generated fab outputs (Gerbers, drill files, packages) are committed |
 | `no-stray-files` | No PDFs, and no HTML outside `renders/web/` |
+| `kicad-dru-composed` | Every `<project>.kicad_dru` with a `<project>.dru.toml` manifest equals the composition of the rule sources it lists; no duplicate rule names |
 
 Use them from a repository's `.pre-commit-config.yaml`, pinned to a tag:
 
 ```yaml
   - repo: https://github.com/opendap-project/toolkit-hooks
-    rev: v0.3.0
+    rev: v0.4.0
     hooks:
       - id: no-stray-files
 ```
+
+## Composed KiCad rule files
+
+A KiCad project reads one `<project>.kicad_dru`. OpenDAP composes it from a fab rule set (kicad-lib, through the `hardware/lib/opendap` submodule) and the board's product rules. The sources are listed, in order, in a manifest next to the project:
+
+```toml
+# hardware/t1-board.dru.toml
+version = 1
+sources = [
+  "hardware/lib/opendap/design-rules/pcbway-hdi/pcbway-hdi.kicad_dru",
+  "hardware/rules/t1-board.kicad_dru",
+]
+```
+
+Paths are relative to the repository root. The composed file has `(version 1)` once, then each source's rules, each block preceded by a comment with the source path and its sha256; two rules with the same name are an error. `hooks/kicad-dru.py compose MANIFEST` writes it (maintainers run it as `odapkit dru compose`, from toolkit-hardware), and `hooks/kicad-dru.py check [--json] [MANIFEST…]` verifies it; with no manifest, `check` covers every `*.dru.toml` in the repository. Python 3.11 or later, standard library only.
 
 ## Layout
 
 - `.pre-commit-hooks.yaml` — hook definitions
 - `hooks/` — the hook scripts
+- `tests/` — tests and their fixtures: `python3 -m unittest discover tests`
 
 ## License
 
